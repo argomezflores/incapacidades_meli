@@ -5,7 +5,7 @@ const crypto  = require('crypto');
 const router  = express.Router();
 
 const WEBHOOK_VALIDATE_URL = process.env.WEBHOOK_VALIDATE_URL;
-const WEBHOOK_BASIC_AUTH   = process.env.WEBHOOK_BASIC_AUTH;
+const WEBHOOK_SECRET       = process.env.WEBHOOK_SECRET;
 
 function shortId() {
   return crypto.randomBytes(4).toString('hex');
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     return res.json({ valid: false, error: 'ID inválido. Debe ser numérico.' });
   }
 
-  if (!WEBHOOK_VALIDATE_URL || !WEBHOOK_BASIC_AUTH) {
+  if (!WEBHOOK_VALIDATE_URL || !WEBHOOK_SECRET) {
     console.error(`[driver:${reqId}] config faltante`);
     return res.json({ valid: false, error: 'Servicio de validación no configurado.' });
   }
@@ -29,10 +29,10 @@ router.post('/', async (req, res) => {
     const vfRes = await fetch(WEBHOOK_VALIDATE_URL, {
       method:  'POST',
       headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Basic ${WEBHOOK_BASIC_AUTH}`,
-        'x-source':      'incapacidades-node-app',
-        'x-request-id':  reqId
+        'Content-Type':   'application/json',
+        'x-secret-token': WEBHOOK_SECRET,
+        'x-source':       'incapacidades-node-app',
+        'x-request-id':   reqId
       },
       body:   JSON.stringify({ operadorId: cleanId }),
       signal: AbortSignal.timeout(8000)
