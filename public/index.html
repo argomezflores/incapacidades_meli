@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffe700">
+  <title>Reporte de Incapacidad</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --yellow:        #ffe700;
+  --yellow-dark:   #ffb300;
+  --yellow-light:  #fff8e1;
+  --blue-cta:      #1565c0;
+  --blue-cta-dark: #0d47a1;
+  --green:         #00A650;
+  --red:           #e53935;
+  --red-light:     #feeceb;
+  --text-dark:     #1c1c1c;
+  --text-mid:      #5a5a5a;
+  --text-light:    #9e9e9e;
+  --border:        #e5e5e5;
+  --bg:            #f5f5f5;
+  --white:         #ffffff;
+  --radius:        8px;
+  --shadow:        0 2px 10px rgba(0,0,0,0.08);
+  --shadow-md:     0 4px 16px rgba(0,0,0,0.12);
+}
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: var(--white);
+  border-bottom: 3px solid var(--yellow);
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.header-inner {
+  max-width: 480px; margin: 0 auto;
+  padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+}
+
+.header-logo {
+  width: 36px; height: 36px; background: var(--yellow);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-texts { display: flex; flex-direction: column; }
+.header-title { font-size: 15px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
+
+.main-content { flex: 1; max-width: 480px; width: 100%; margin: 0 auto; padding: 20px 16px 40px; }
+
+.hero-card {
+  background: var(--white); border-radius: var(--radius); padding: 20px;
+  margin-bottom: 20px; display: flex; gap: 16px; align-items: flex-start;
+  box-shadow: var(--shadow); border-left: 4px solid var(--yellow);
+}
+
+.hero-icon { flex-shrink: 0; margin-top: 2px; }
+.hero-title { font-size: 17px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; }
+.hero-subtitle { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
+
+.steps-indicator { display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+
+.step {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--border);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background 0.25s, transform 0.2s;
+}
+.step.active { background: var(--yellow); transform: scale(1.1); }
+.step.done   { background: var(--green); }
+.step-num    { font-size: 12px; font-weight: 800; color: var(--text-dark); }
+.step.done .step-num { color: var(--white); }
+
+.step-line { flex: 1; height: 2px; background: var(--border); max-width: 60px; transition: background 0.25s; }
+.step-line.done { background: var(--green); }
+
+.steps-labels { display: flex; justify-content: space-between; padding: 0 4px; margin-bottom: 20px; }
+.steps-labels span {
+  font-size: 10px; color: var(--text-light); text-align: center; flex: 1;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+}
+
+.form-step        { display: none; }
+.form-step.active { display: block; }
+
+.card { background: var(--white); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.card-title { font-size: 15px; font-weight: 800; color: var(--text-dark); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+
+.field-group          { margin-bottom: 20px; }
+.field-group:last-child { margin-bottom: 0; }
+
+.field-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-mid); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px; }
+.required { color: var(--yellow-dark); }
+.optional  { color: var(--text-light); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.field-input {
+  width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 14px; font-family: inherit; color: var(--text-dark); background: var(--white);
+  transition: border-color 0.18s, box-shadow 0.18s; outline: none; -webkit-appearance: none;
+}
+.field-input:focus { border-color: var(--yellow-dark); box-shadow: 0 0 0 3px rgba(255,179,0,0.12); }
+.field-input.error { border-color: var(--red); }
+.field-input.ok    { border-color: var(--green); }
+.field-textarea    { resize: vertical; min-height: 80px; font-family: inherit; }
+
+.field-hint  { display: block; font-size: 11px; color: var(--text-light); margin-top: 5px; }
+.field-error { display: block; font-size: 12px; color: var(--red); margin-top: 5px; min-height: 16px; }
+
+.phone-input-wrapper {
+  display: flex; align-items: stretch; border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; transition: border-color 0.18s, box-shadow 0.18s;
+}
+.phone-input-wrapper:focus-within { border-color: var(--yellow-dark); box-shadow: 0 0 0 3px rgba(255,179,0,0.12); }
+.phone-prefix {
+  background: var(--bg); border-right: 1px solid var(--border); padding: 11px 12px;
+  font-size: 13px; font-weight: 700; color: var(--text-mid); display: flex; align-items: center; white-space: nowrap;
+}
+.phone-input { border: none; border-radius: 0; flex: 1; padding: 11px 14px; font-size: 14px; }
+.phone-input:focus { box-shadow: none; outline: none; }
+
+.option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.option-grid--3 { grid-template-columns: 1fr 1fr; }
+.option-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 10px; display: flex; flex-direction: column; align-items: center;
+  gap: 6px; cursor: pointer; transition: border-color 0.18s, background 0.18s; text-align: center;
+}
+.option-card:hover    { border-color: var(--yellow-dark); background: var(--yellow-light); }
+.option-card.selected { border-color: var(--yellow-dark); background: var(--yellow-light); box-shadow: 0 0 0 2px rgba(255,179,0,0.2); }
+.option-card--full    { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 10px; padding: 12px 16px; }
+.option-card--full .option-icon  { font-size: 20px; }
+.option-card--full .option-label { font-size: 12px; }
+.option-icon  { font-size: 22px; }
+.option-label { font-size: 11px; font-weight: 700; color: var(--text-dark); line-height: 1.3; text-transform: uppercase; letter-spacing: 0.3px; }
+
+.toggle-group { display: flex; gap: 10px; }
+.toggle-btn {
+  flex: 1; padding: 11px 8px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--white); font-size: 13px; font-weight: 700; color: var(--text-mid);
+  cursor: pointer; transition: all 0.18s; font-family: inherit;
+}
+.toggle-btn:hover    { border-color: var(--yellow-dark); background: var(--yellow-light); color: var(--text-dark); }
+.toggle-btn.selected { border-color: var(--yellow-dark); background: var(--yellow-light); color: var(--text-dark); }
+
+.radio-group { display: flex; flex-direction: column; gap: 10px; }
+.radio-option {
+  display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-dark);
+  cursor: pointer; padding: 11px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius); transition: border-color 0.18s, background 0.18s; font-family: inherit;
+}
+.radio-option:hover { border-color: var(--yellow-dark); background: var(--yellow-light); }
+.radio-option input[type="radio"] { accent-color: var(--yellow-dark); width: 16px; height: 16px; }
+.radio-option:has(input:checked) { border-color: var(--yellow-dark); background: var(--yellow-light); }
+
+/* Upload zone */
+.upload-zone { margin-top: 14px; }
+.upload-area {
+  display: block; border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 24px 16px; text-align: center; cursor: pointer; position: relative;
+  transition: border-color 0.18s, background 0.18s; background: var(--bg); overflow: hidden;
+}
+.upload-area:hover { border-color: var(--yellow-dark); background: var(--yellow-light); }
+.upload-input { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; z-index:1; }
+.upload-prompt-icon { font-size: 22px; margin-bottom: 6px; }
+.upload-prompt-text { font-size: 13px; font-weight: 700; color: var(--text-mid); }
+.upload-prompt-hint { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+.file-preview {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: #e8f9ee; border: 1px solid rgba(0,166,80,0.25); border-radius: var(--radius); margin-top: 10px;
+}
+.file-preview-icon { font-size: 22px; flex-shrink: 0; }
+.file-preview-info { flex: 1; min-width: 0; }
+.file-preview-name { font-size: 13px; font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-preview-size { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.file-preview-remove {
+  flex-shrink: 0; background: transparent; border: none; font-size: 14px; color: var(--text-light);
+  cursor: pointer; padding: 4px 6px; border-radius: 4px; line-height: 1; font-family: inherit;
+  transition: background 0.15s, color 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.file-preview-remove:hover { background: rgba(229,57,53,0.1); color: var(--red); }
+
+/* IMSS sub-form */
+.imss-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+.imss-form-title {
+  font-size: 12px; font-weight: 700; color: var(--text-mid);
+  text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 16px;
+}
+
+/* Reminder card */
+.reminder-card {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--yellow-light); border: 1px solid rgba(255,179,0,0.3);
+  border-left: 4px solid var(--yellow-dark); border-radius: var(--radius); padding: 14px 16px; margin-top: 24px;
+}
+.reminder-icon  { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.reminder-title { font-size: 13px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+.reminder-text  { font-size: 13px; color: var(--text-mid); line-height: 1.5; margin: 0; }
+
+/* Summary */
+.summary-box { background: var(--bg); border-radius: var(--radius); padding: 14px 16px; margin-top: 20px; border: 1px solid var(--border); }
+.summary-title { font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.summary-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.summary-row:last-child { border-bottom: none; }
+.summary-key   { color: var(--text-light); flex-shrink: 0; margin-right: 10px; }
+.summary-value { color: var(--text-dark); font-weight: 700; text-align: right; }
+
+/* Nav buttons */
+.nav-buttons { display: flex; gap: 12px; margin-top: 4px; }
+.btn-primary {
+  flex: 1; background: var(--blue-cta); color: var(--white); border: none;
+  border-radius: var(--radius); padding: 13px 20px; font-size: 15px; font-weight: 800;
+  font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 8px; transition: background 0.18s, transform 0.1s; -webkit-tap-highlight-color: transparent;
+}
+.btn-primary:hover    { background: var(--blue-cta-dark); }
+.btn-primary:active   { transform: scale(0.98); }
+.btn-primary.full     { width: 100%; }
+.btn-primary:disabled { background: #b8b8b8; cursor: not-allowed; }
+.btn-secondary {
+  flex: 0 0 auto; background: transparent; color: var(--blue-cta); border: 1.5px solid var(--blue-cta);
+  border-radius: var(--radius); padding: 12px 18px; font-size: 14px; font-weight: 700; font-family: inherit;
+  cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-secondary:hover  { background: #e8f0fe; }
+.btn-secondary:active { transform: scale(0.98); }
+
+/* Privacy note */
+.privacy-note { font-size: 11px; color: var(--text-light); line-height: 1.5; display: flex; gap: 6px; align-items: flex-start; margin: 12px 0 16px; }
+.privacy-note svg { flex-shrink: 0; margin-top: 1px; }
+
+/* Verify */
+.verify-input-row { display: flex; gap: 8px; align-items: stretch; }
+.verify-input-row .field-input { flex: 1; }
+.btn-verify {
+  flex-shrink: 0; padding: 0 16px; border: 1.5px solid var(--yellow-dark); border-radius: var(--radius);
+  background: transparent; color: var(--text-dark); font-size: 13px; font-weight: 700; font-family: inherit;
+  cursor: pointer; white-space: nowrap; transition: background 0.18s; -webkit-tap-highlight-color: transparent;
+}
+.btn-verify:hover:not(:disabled) { background: var(--yellow-light); }
+.btn-verify:disabled { border-color: var(--border); color: var(--text-light); cursor: not-allowed; }
+.btn-verify--done    { border-color: var(--green); color: var(--green); }
+.verify-badge {
+  display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+  padding: 10px 14px; border-radius: var(--radius); margin-top: 10px; margin-bottom: 4px; line-height: 1.4;
+}
+.verify-badge--loading { background: var(--bg); color: var(--text-mid); border: 1px solid var(--border); }
+.verify-badge--success { background: #e8f9ee; color: var(--green); border: 1px solid rgba(0,166,80,0.25); }
+.verify-badge--error   { background: var(--red-light); color: var(--red); border: 1px solid rgba(229,57,53,0.25); }
+.badge-spinner {
+  display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border);
+  border-top-color: var(--yellow-dark); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
+}
+.field-input--readonly { background: var(--bg); color: var(--text-mid); cursor: default; }
+.field-input--readonly:focus { border-color: var(--border); box-shadow: none; }
+
+/* Loading */
+.loading-wrapper { text-align: center; padding: 80px 20px; }
+.spinner {
+  width: 44px; height: 44px; border: 4px solid var(--border); border-top-color: var(--yellow-dark);
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 17px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+.loading-sub  { font-size: 13px; color: var(--text-light); }
+
+/* Result cards */
+.result-card { background: var(--white); border-radius: 12px; padding: 32px 24px; text-align: center; box-shadow: var(--shadow-md); margin-top: 20px; border-top: 3px solid var(--yellow); }
+.result-icon     { margin-bottom: 20px; }
+.result-title    { font-size: 21px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px; }
+.result-subtitle { font-size: 14px; color: var(--text-mid); line-height: 1.6; margin-bottom: 24px; }
+.result-note     { font-size: 12px; color: var(--text-light); margin: 12px 0 24px; }
+.folio-box { background: var(--yellow-light); border: 1.5px solid rgba(255,179,0,0.4); border-radius: var(--radius); padding: 16px; margin-bottom: 8px; }
+.folio-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.folio-value { display: block; font-size: 22px; font-weight: 800; color: var(--text-dark); letter-spacing: 1px; font-family: monospace; }
+
+/* Footer */
+.app-footer { background: var(--white); border-top: 1px solid var(--border); padding: 16px; text-align: center; }
+.app-footer p { font-size: 11px; color: var(--text-light); line-height: 1.7; }
+
+.hidden { display: none !important; }
+
+@media (min-width: 480px) {
+  .main-content { padding: 24px 20px 48px; }
+  .hero-title    { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="6" y="1" width="6" height="16" rx="2" fill="#1c1c1c"/>
+          <rect x="1" y="6" width="16" height="6" rx="2" fill="#1c1c1c"/>
+        </svg>
+      </div>
+      <div class="header-texts">
+        <span class="header-title">Reporte de Incapacidad</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ===== FORM ===== -->
+    <div id="screen-form">
+
+      <div class="hero-card">
+        <div class="hero-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="16" fill="#fff8e1"/>
+            <path d="M16 8C13.8 8 12 9.8 12 12C12 14.2 13.8 16 16 16C18.2 16 20 14.2 20 12C20 9.8 18.2 8 16 8Z" fill="#ffb300"/>
+            <path d="M16 18C12.1 18 9 19.8 9 22V23H23V22C23 19.8 19.9 18 16 18Z" fill="#ffb300"/>
+          </svg>
+        </div>
+        <div class="hero-text">
+          <h1 class="hero-title">¿Tuviste una incidencia?</h1>
+          <p class="hero-subtitle">Completa este formulario para registrar tu incapacidad. Tu reporte quedará registrado y recibirás seguimiento de tu caso.</p>
+        </div>
+      </div>
+
+      <div class="steps-indicator">
+        <div class="step active" id="step-dot-1"><span class="step-num">1</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step-dot-2"><span class="step-num">2</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step-dot-3"><span class="step-num">3</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step-dot-4"><span class="step-num">4</span></div>
+      </div>
+      <div class="steps-labels">
+        <span>Identificación</span>
+        <span>Incidencia</span>
+        <span>Constancia</span>
+        <span>Contacto</span>
+      </div>
+
+      <form id="incapacidad-form" novalidate>
+
+        <!-- PASO 1 -->
+        <div class="form-step active" id="step-1">
+          <div class="card">
+            <h2 class="card-title">¿Quién eres?</h2>
+            <div class="field-group">
+              <label class="field-label" for="operadorId">ID Driver <span class="required">*</span></label>
+              <div class="verify-input-row">
+                <input class="field-input" type="text" id="operadorId" name="operadorId"
+                  placeholder="Ej: 3129587" autocomplete="off" inputmode="numeric" maxlength="10"
+                  oninput="resetVerification()">
+                <button type="button" class="btn-verify" id="btn-verify" onclick="verifyDriver()">Verificar</button>
+              </div>
+              <span class="field-error" id="err-operadorId"></span>
+            </div>
+            <div id="verify-badge" class="verify-badge hidden"></div>
+            <div class="field-group" id="group-nombre" style="display:none;">
+              <label class="field-label" for="nombre">Nombre completo</label>
+              <input class="field-input field-input--readonly" type="text" id="nombre" name="nombre" readonly tabindex="-1">
+              <span class="field-hint">Obtenido de tu registro de operador</span>
+            </div>
+            <input type="hidden" id="nodo" name="nodo">
+          </div>
+          <div class="nav-buttons">
+            <button type="button" class="btn-primary full" id="btn-step1-continue" onclick="goStep(2)" disabled>
+              Continuar
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 2 -->
+        <div class="form-step" id="step-2">
+          <div class="card">
+            <h2 class="card-title">¿Qué pasó?</h2>
+            <div class="field-group">
+              <label class="field-label">Tipo de incidencia <span class="required">*</span></label>
+              <div class="option-grid option-grid--3" id="tipo-grid">
+                <button type="button" class="option-card" data-value="enfermedad_general" onclick="selectTipo(this)">
+                  <span class="option-icon">🏥</span><span class="option-label">Enfermedad General</span>
+                </button>
+                <button type="button" class="option-card" data-value="riesgo_trabajo" onclick="selectTipo(this)">
+                  <span class="option-icon">🦺</span><span class="option-label">Riesgo de Trabajo</span>
+                </button>
+                <button type="button" class="option-card option-card--full" data-value="maternidad" onclick="selectTipo(this)">
+                  <span class="option-icon">🌸</span><span class="option-label">Maternidad</span>
+                </button>
+              </div>
+              <input type="hidden" id="tipoIncidencia" name="tipoIncidencia">
+              <span class="field-error" id="err-tipoIncidencia"></span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="fechaIncidente">Fecha y hora del incidente <span class="required">*</span></label>
+              <input class="field-input" type="datetime-local" id="fechaIncidente" name="fechaIncidente">
+              <span class="field-error" id="err-fechaIncidente"></span>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="descripcion">Descripción breve <span class="optional">(opcional)</span></label>
+              <textarea class="field-input field-textarea" id="descripcion" name="descripcion"
+                placeholder="Describe brevemente lo que ocurrió…" maxlength="500" rows="3"></textarea>
+              <span class="field-hint char-counter"><span id="char-count">0</span>/500 caracteres</span>
+            </div>
+          </div>
+          <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="goStep(1)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="#3483FA" stroke-width="2" stroke-linecap="round"/></svg>Atrás
+            </button>
+            <button type="button" class="btn-primary" onclick="goStep(3)">
+              Continuar<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 3 -->
+        <div class="form-step" id="step-3">
+          <div class="card">
+            <h2 class="card-title">Constancia médica</h2>
+            <div class="field-group">
+              <label class="field-label">¿Tienes constancia médica? <span class="required">*</span></label>
+              <div class="radio-group">
+                <label class="radio-option"><input type="radio" name="constanciaMedica" value="si" onchange="handleConstanciaChange(this.value)"> Sí, ya tengo</label>
+                <label class="radio-option"><input type="radio" name="constanciaMedica" value="en_tramite" onchange="handleConstanciaChange(this.value)"> En trámite</label>
+                <label class="radio-option"><input type="radio" name="constanciaMedica" value="no" onchange="handleConstanciaChange(this.value)"> No por el momento</label>
+              </div>
+              <span class="field-error" id="err-constanciaMedica"></span>
+            </div>
+
+            <div id="upload-zone" class="upload-zone hidden">
+              <label class="field-label" style="margin-bottom:10px;">Adjunta la constancia <span class="optional">(opcional)</span></label>
+              <label for="constanciaFile" class="upload-area" id="upload-area">
+                <input type="file" id="constanciaFile" name="constanciaFile" accept="image/*,.pdf" class="upload-input" onchange="handleFileSelect(this)">
+                <div class="upload-prompt" id="upload-prompt">
+                  <div class="upload-prompt-icon">📎</div>
+                  <div class="upload-prompt-text">Toca para adjuntar un archivo</div>
+                  <div class="upload-prompt-hint">Foto o escáner del formato · JPG, PNG o PDF · Máx 10 MB</div>
+                </div>
+              </label>
+              <div id="file-preview" class="file-preview hidden">
+                <span class="file-preview-icon" id="file-type-icon">📄</span>
+                <div class="file-preview-info">
+                  <div class="file-preview-name" id="file-preview-name"></div>
+                  <div class="file-preview-size" id="file-preview-size"></div>
+                </div>
+                <button type="button" class="file-preview-remove" onclick="removeFile()">✕</button>
+              </div>
+            </div>
+
+            <div id="imss-form" class="imss-form hidden">
+              <div class="imss-form-title">Datos de la constancia IMSS <span class="optional">(opcionales)</span></div>
+              <div class="field-group">
+                <label class="field-label" for="imss-folio">Número de folio del formato IMSS</label>
+                <input class="field-input" type="text" id="imss-folio" name="imss-folio" placeholder="Ej: 123456789" maxlength="20">
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="imss-nss">Número de Seguridad Social (NSS)</label>
+                <input class="field-input" type="text" id="imss-nss" name="imss-nss" placeholder="11 dígitos" inputmode="numeric" maxlength="11">
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="imss-fechaInicio">Fecha de inicio de la incapacidad</label>
+                <input class="field-input" type="date" id="imss-fechaInicio" name="imss-fechaInicio">
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="imss-dias">Número de días de incapacidad</label>
+                <input class="field-input" type="number" id="imss-dias" name="imss-dias" placeholder="Ej: 7" min="1" max="365">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Tipo de incapacidad IMSS</label>
+                <div class="toggle-group">
+                  <button type="button" class="toggle-btn" data-value="inicial" onclick="selectToggle('imss-tipo','inicial',this)">Inicial</button>
+                  <button type="button" class="toggle-btn" data-value="subsecuente" onclick="selectToggle('imss-tipo','subsecuente',this)">Subsecuente</button>
+                </div>
+                <input type="hidden" id="imss-tipo" name="imss-tipo">
+              </div>
+            </div>
+
+            <div class="reminder-card">
+              <span class="reminder-icon">📋</span>
+              <div>
+                <div class="reminder-title">Recuerda</div>
+                <p class="reminder-text">El formato de incapacidad deberás entregarlo físicamente con tu líder responsable en tu estación correspondiente. Puede hacerlo un familiar en tu nombre.</p>
+              </div>
+            </div>
+          </div>
+          <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="goStep(2)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="#3483FA" stroke-width="2" stroke-linecap="round"/></svg>Atrás
+            </button>
+            <button type="button" class="btn-primary" onclick="goStep(4)">
+              Continuar<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3L11 8L6 13" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- PASO 4 -->
+        <div class="form-step" id="step-4">
+          <div class="card">
+            <h2 class="card-title">¿Cómo te contactamos?</h2>
+            <div class="field-group">
+              <label class="field-label" for="correo">Correo electrónico <span class="optional">(opcional)</span></label>
+              <input class="field-input" type="email" id="correo" name="correo" placeholder="ejemplo@correo.com" autocomplete="email" inputmode="email">
+              <span class="field-error" id="err-correo"></span>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Teléfono de contacto <span class="optional">(opcional)</span></label>
+              <div class="phone-input-wrapper">
+                <span class="phone-prefix">🇲🇽 +52</span>
+                <input class="phone-input" type="tel" id="telefono" name="telefono"
+                  placeholder="10 dígitos" inputmode="numeric" maxlength="10"
+                  oninput="this.value=this.value.replace(/\D/g,'')">
+              </div>
+              <span class="field-hint">Sin código de país, solo los 10 dígitos</span>
+              <span class="field-error" id="err-telefono"></span>
+            </div>
+            <div class="summary-box" id="summary-box">
+              <div class="summary-title">Resumen de tu reporte</div>
+              <div id="summary-content"></div>
+            </div>
+          </div>
+          <div class="privacy-note">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L1 4V7C1 10.3 3.6 13.4 7 14C10.4 13.4 13 10.3 13 7V4L7 1Z" stroke="#9E9E9E" stroke-width="1.2"/></svg>
+            Tus datos se usan únicamente para gestionar esta incidencia conforme al <strong>Aviso de Privacidad</strong> aplicable.
+          </div>
+          <div class="nav-buttons">
+            <button type="button" class="btn-secondary" onclick="goStep(3)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="#3483FA" stroke-width="2" stroke-linecap="round"/></svg>Atrás
+            </button>
+            <button type="submit" class="btn-primary btn-submit" id="btn-submit">Enviar reporte</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ===== CARGANDO ===== -->
+    <div id="screen-loading" class="hidden">
+      <div class="loading-wrapper">
+        <div class="spinner"></div>
+        <p class="loading-text">Enviando tu reporte…</p>
+        <p class="loading-sub">No cierres esta pantalla</p>
+      </div>
+    </div>
+
+    <!-- ===== ÉXITO ===== -->
+    <div id="screen-success" class="hidden">
+      <div class="result-card success">
+        <div class="result-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="24" fill="#E8F9EE"/>
+            <path d="M14 24L21 31L34 17" stroke="#00A650" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="result-title">¡Reporte enviado!</h2>
+        <p class="result-subtitle">Tu incidencia quedó registrada. Un responsable se pondrá en contacto contigo pronto.</p>
+        <div class="folio-box">
+          <span class="folio-label">Tu número de folio</span>
+          <span class="folio-value" id="folio-display">—</span>
+        </div>
+        <p class="result-note">Guarda este folio para dar seguimiento a tu caso.</p>
+        <button type="button" class="btn-primary full" onclick="resetForm()">Enviar otro reporte</button>
+      </div>
+    </div>
+
+    <!-- ===== ERROR ===== -->
+    <div id="screen-error" class="hidden">
+      <div class="result-card error">
+        <div class="result-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="24" fill="#FEECEB"/>
+            <path d="M24 14V26" stroke="#F04E37" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="24" cy="32" r="2" fill="#F04E37"/>
+          </svg>
+        </div>
+        <h2 class="result-title">Algo salió mal</h2>
+        <p class="result-subtitle" id="error-message">No pudimos enviar tu reporte. Por favor intenta de nuevo.</p>
+        <button type="button" class="btn-primary full" onclick="showScreen('form')">Intentar de nuevo</button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Formulario de Reporte de Incapacidades</p>
+  </footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var currentStep    = 1;
+  var totalSteps     = 4;
+  var driverVerified = false;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var now = new Date();
+    var pad = function(n) { return ('0' + n).slice(-2); };
+    var maxDt = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    document.getElementById('fechaIncidente').setAttribute('max', maxDt);
+
+    document.getElementById('descripcion').addEventListener('input', function () {
+      document.getElementById('char-count').textContent = this.value.length;
+    });
+
+    document.getElementById('incapacidad-form').addEventListener('submit', handleSubmit);
+  });
+
+  // ── Verificación de ID ─────────────────────────────────────
+  window.verifyDriver = function () {
+    var id = getVal('operadorId').toUpperCase();
+    if (!id || id.length < 3) {
+      showError('err-operadorId', 'Ingresa tu ID de operador antes de verificar.');
+      return;
+    }
+    setVerifyState('loading');
+
+    fetch('/api/validate-driver', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ operadorId: id })
+    })
+    .then(function(r) { return r.json(); })
+    .then(onVerifySuccess)
+    .catch(onVerifyError);
+  };
+
+  function onVerifySuccess(result) {
+    if (result && result.valid) {
+      driverVerified = true;
+      if (result.nombre) {
+        document.getElementById('nombre').value = result.nombre;
+        document.getElementById('group-nombre').style.display = 'block';
+      }
+      if (result.nodo) { document.getElementById('nodo').value = result.nodo; }
+      setVerifyState('success', result.nombre || '');
+      document.getElementById('btn-step1-continue').disabled = false;
+      clearError('err-operadorId');
+    } else {
+      driverVerified = false;
+      var msg = (result && result.error) ? result.error : 'Este ID no existe. Verifica tu número de colaborador.';
+      setVerifyState('error', msg);
+      document.getElementById('btn-step1-continue').disabled = true;
+    }
+  }
+
+  function onVerifyError() {
+    driverVerified = false;
+    setVerifyState('error', 'Error de conexión. Intenta de nuevo en unos segundos.');
+    document.getElementById('btn-step1-continue').disabled = true;
+  }
+
+  window.resetVerification = function () {
+    if (!driverVerified) return;
+    driverVerified = false;
+    setVerifyState('idle');
+    document.getElementById('btn-step1-continue').disabled = true;
+    document.getElementById('group-nombre').style.display = 'none';
+    document.getElementById('nombre').value = '';
+    document.getElementById('nodo').value   = '';
+  };
+
+  function setVerifyState(state, text) {
+    var badge  = document.getElementById('verify-badge');
+    var btnVer = document.getElementById('btn-verify');
+    badge.className = 'verify-badge';
+    badge.classList.remove('hidden');
+    if (state === 'idle') {
+      badge.classList.add('hidden');
+      btnVer.disabled = false; btnVer.textContent = 'Verificar'; return;
+    }
+    if (state === 'loading') {
+      badge.classList.add('verify-badge--loading');
+      badge.innerHTML = '<span class="badge-spinner"></span> Verificando…';
+      btnVer.disabled = true; btnVer.textContent = 'Verificando…'; return;
+    }
+    btnVer.disabled = false;
+    if (state === 'success') {
+      badge.classList.add('verify-badge--success');
+      badge.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7L6 11L12 3" stroke="#00A650" stroke-width="2" stroke-linecap="round"/></svg>' +
+        ' ID confirmado' + (text ? ' — <strong>' + escapeHtml(text) + '</strong>' : '');
+      btnVer.textContent = 'Verificado'; btnVer.classList.add('btn-verify--done');
+    }
+    if (state === 'error') {
+      badge.classList.add('verify-badge--error');
+      badge.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3V8" stroke="#F04E37" stroke-width="2" stroke-linecap="round"/><circle cx="7" cy="11" r="1" fill="#F04E37"/></svg>' +
+        ' ' + escapeHtml(text || 'ID no encontrado.');
+      btnVer.textContent = 'Reintentar';
+    }
+  }
+
+  // ── Navegación ─────────────────────────────────────────────
+  window.goStep = function (targetStep) {
+    if (targetStep > currentStep) {
+      if (!validateStep(currentStep)) return;
+      if (targetStep === 4) buildSummary();
+    }
+    setStep(targetStep);
+  };
+
+  function setStep(n) {
+    document.getElementById('step-' + currentStep).classList.remove('active');
+    if (n > currentStep) {
+      var dot = document.getElementById('step-dot-' + currentStep);
+      dot.classList.remove('active'); dot.classList.add('done');
+      var lines = document.querySelectorAll('.step-line');
+      if (currentStep - 1 < lines.length) lines[currentStep - 1].classList.add('done');
+    }
+    currentStep = n;
+    document.getElementById('step-' + currentStep).classList.add('active');
+    var newDot = document.getElementById('step-dot-' + currentStep);
+    newDot.classList.add('active'); newDot.classList.remove('done');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Validaciones ───────────────────────────────────────────
+  function validateStep(step) {
+    clearErrors();
+    var ok = true;
+    if (step === 1) {
+      if (!getVal('operadorId')) { showError('err-operadorId', 'Ingresa tu ID de operador'); markField('operadorId', false); ok = false; }
+      else if (!driverVerified)  { showError('err-operadorId', 'Debes verificar tu ID antes de continuar'); markField('operadorId', false); ok = false; }
+      else { markField('operadorId', true); }
+    }
+    if (step === 2) {
+      if (!getVal('tipoIncidencia')) { showError('err-tipoIncidencia', 'Selecciona el tipo de incidencia'); ok = false; }
+      var fecha = getVal('fechaIncidente');
+      if (!fecha) { showError('err-fechaIncidente', 'Indica la fecha y hora del incidente'); markField('fechaIncidente', false); ok = false; }
+      else {
+        var d = new Date(fecha);
+        if (d > new Date()) { showError('err-fechaIncidente', 'La fecha no puede ser futura'); markField('fechaIncidente', false); ok = false; }
+        else { markField('fechaIncidente', true); }
+      }
+    }
+    if (step === 3) {
+      var constancia = document.querySelector('input[name="constanciaMedica"]:checked');
+      if (!constancia) { showError('err-constanciaMedica', 'Indica si tienes constancia médica'); ok = false; }
+    }
+    if (step === 4) {
+      var correo = getVal('correo');
+      if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        showError('err-correo', 'Ingresa un correo electrónico válido'); markField('correo', false); ok = false;
+      } else if (correo) { markField('correo', true); }
+      var tel = getVal('telefono');
+      if (tel && tel.replace(/\D/g, '').length !== 10) { showError('err-telefono', 'El teléfono debe tener 10 dígitos'); ok = false; }
+    }
+    return ok;
+  }
+
+  window.selectTipo = function (el) {
+    document.querySelectorAll('#tipo-grid .option-card').forEach(function(c) { c.classList.remove('selected'); });
+    el.classList.add('selected');
+    document.getElementById('tipoIncidencia').value = el.getAttribute('data-value');
+    clearError('err-tipoIncidencia');
+  };
+
+  window.selectToggle = function (fieldId, value, btnEl) {
+    var group = btnEl && btnEl.parentNode ? btnEl.parentNode : null;
+    var btns  = group ? group.querySelectorAll('.toggle-btn') : document.querySelectorAll('.toggle-btn');
+    btns.forEach(function(b) { b.classList.remove('selected'); });
+    if (btnEl) btnEl.classList.add('selected');
+    var field = document.getElementById(fieldId);
+    if (field) field.value = value;
+  };
+
+  // ── Constancia condicional ─────────────────────────────────
+  window.handleConstanciaChange = function (value) {
+    var uploadZone = document.getElementById('upload-zone');
+    var imssForm   = document.getElementById('imss-form');
+    if (value === 'si') {
+      uploadZone.classList.remove('hidden');
+      imssForm.classList.remove('hidden');
+    } else {
+      uploadZone.classList.add('hidden');
+      imssForm.classList.add('hidden');
+      removeFile();
+    }
+  };
+
+  // ── File upload ────────────────────────────────────────────
+  window.handleFileSelect = function (input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var allowedExt = ['jpg','jpeg','png','webp','heic','heif','pdf'];
+    var ext  = file.name.split('.').pop().toLowerCase();
+    if (allowedExt.indexOf(ext) === -1) {
+      alert('Tipo de archivo no permitido. Sube foto (JPG/PNG/WEBP/HEIC) o PDF.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      alert('El archivo excede el límite de 8 MB.');
+      input.value = '';
+      return;
+    }
+    document.getElementById('file-type-icon').textContent    = (ext === 'pdf') ? '📄' : '🖼️';
+    document.getElementById('file-preview-name').textContent = file.name;
+    document.getElementById('file-preview-size').textContent = formatFileSize(file.size);
+    document.getElementById('upload-prompt').style.display   = 'none';
+    document.getElementById('file-preview').classList.remove('hidden');
+  };
+
+  window.removeFile = function () {
+    var input = document.getElementById('constanciaFile');
+    if (input) input.value = '';
+    var prompt  = document.getElementById('upload-prompt');
+    var preview = document.getElementById('file-preview');
+    if (prompt)  prompt.style.display = '';
+    if (preview) preview.classList.add('hidden');
+  };
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024)    return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  // ── Resumen ────────────────────────────────────────────────
+  function buildSummary() {
+    var tipoLabels = { enfermedad_general: 'Enfermedad General', riesgo_trabajo: 'Riesgo de Trabajo', maternidad: 'Maternidad' };
+    var cLabels    = { si: 'Sí, ya tengo', en_tramite: 'En trámite', no: 'No por el momento' };
+    var constEl    = document.querySelector('input[name="constanciaMedica"]:checked');
+    var rows = [
+      ['Nombre',     getVal('nombre')],
+      ['ID Driver',  getVal('operadorId')],
+      ['Tipo',       tipoLabels[getVal('tipoIncidencia')] || '—'],
+      ['Fecha',      formatDateTime(getVal('fechaIncidente'))],
+      ['Constancia', constEl ? (cLabels[constEl.value] || constEl.value) : '—']
+    ];
+    var html = '';
+    rows.forEach(function(r) {
+      html += '<div class="summary-row"><span class="summary-key">' + r[0] + '</span><span class="summary-value">' + (r[1] || '—') + '</span></div>';
+    });
+    document.getElementById('summary-content').innerHTML = html;
+  }
+
+  // ── Submit ─────────────────────────────────────────────────
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!validateStep(4)) return;
+    var fileInput = document.getElementById('constanciaFile');
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      var file = fileInput.files[0];
+      var reader = new FileReader();
+      reader.onload  = function(ev) { submitWithData(ev.target.result, file.name); };
+      reader.onerror = function()   { submitWithData('', ''); };
+      reader.readAsDataURL(file);
+    } else {
+      submitWithData('', '');
+    }
+  }
+
+  function submitWithData(fileBase64, fileName) {
+    var constanciaEl = document.querySelector('input[name="constanciaMedica"]:checked');
+    var formData = {
+      nombre:               getVal('nombre'),
+      operadorId:           getVal('operadorId'),
+      nodo:                 getVal('nodo'),
+      tipoIncidencia:       getVal('tipoIncidencia'),
+      fechaIncidente:       getVal('fechaIncidente'),
+      descripcion:          getVal('descripcion'),
+      correo:               getVal('correo'),
+      telefono:             getVal('telefono'),
+      constanciaMedica:     constanciaEl ? constanciaEl.value : 'no_especificado',
+      constanciaFileBase64: fileBase64 || '',
+      constanciaFileName:   fileName   || '',
+      imssData: {
+        folioImss:      getVal('imss-folio'),
+        nss:            getVal('imss-nss'),
+        fechaInicio:    getVal('imss-fechaInicio'),
+        diasIncapacidad:getVal('imss-dias'),
+        tipoConstancia: getVal('imss-tipo')
+      }
+    };
+
+    showScreen('loading');
+
+    fetch('/api/submit', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(formData)
+    })
+    .then(function(r) { return r.json(); })
+    .then(onSuccess)
+    .catch(onError);
+  }
+
+  function onSuccess(result) {
+    if (result && result.success) {
+      document.getElementById('folio-display').textContent = result.folio || '—';
+      showScreen('success');
+    } else {
+      var msg = (result && result.error) ? result.error : 'Error desconocido. Intenta de nuevo.';
+      document.getElementById('error-message').textContent = msg;
+      showScreen('error');
+    }
+  }
+
+  function onError(err) {
+    console.error('fetch error:', err);
+    document.getElementById('error-message').textContent = 'Error de conexión. Revisa tu internet e intenta de nuevo.';
+    showScreen('error');
+  }
+
+  window.showScreen = function (name) {
+    ['form','loading','success','error'].forEach(function(s) {
+      var el = document.getElementById('screen-' + s);
+      if (el) el.classList.toggle('hidden', s !== name);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.resetForm = function () {
+    driverVerified = false;
+    setVerifyState('idle');
+    document.getElementById('btn-step1-continue').disabled = true;
+    document.getElementById('group-nombre').style.display = 'none';
+    document.getElementById('incapacidad-form').reset();
+    document.querySelectorAll('.option-card').forEach(function(c) { c.classList.remove('selected'); });
+    document.querySelectorAll('.toggle-btn').forEach(function(b)  { b.classList.remove('selected'); });
+    document.querySelectorAll('.field-input').forEach(function(i) { i.classList.remove('error','ok'); });
+    document.getElementById('upload-zone').classList.add('hidden');
+    document.getElementById('imss-form').classList.add('hidden');
+    removeFile();
+    clearErrors();
+    document.getElementById('char-count').textContent = '0';
+    currentStep = 1;
+    for (var i = 1; i <= totalSteps; i++) {
+      var stepEl = document.getElementById('step-' + i);
+      var dot    = document.getElementById('step-dot-' + i);
+      if (stepEl) stepEl.classList.remove('active');
+      if (dot)    dot.classList.remove('active','done');
+    }
+    document.querySelectorAll('.step-line').forEach(function(l) { l.classList.remove('done'); });
+    document.getElementById('step-1').classList.add('active');
+    document.getElementById('step-dot-1').classList.add('active');
+    showScreen('form');
+  };
+
+  // ── Helpers ────────────────────────────────────────────────
+  function getVal(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  function showError(id, msg) { var el = document.getElementById(id); if (el) el.textContent = msg; }
+  function clearError(id)     { var el = document.getElementById(id); if (el) el.textContent = ''; }
+  function clearErrors() { document.querySelectorAll('.field-error').forEach(function(e) { e.textContent = ''; }); }
+  function markField(id, ok) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('ok', ok); el.classList.toggle('error', !ok);
+  }
+  function formatDateTime(isoStr) {
+    if (!isoStr) return '—';
+    var d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    var pad = function(n) { return ('0' + n).slice(-2); };
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' h';
+  }
+  function escapeHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+}());
+</script>
+</body>
+</html>
