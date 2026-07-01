@@ -10,8 +10,8 @@ const {
   validateAttachment
 } = require('../middleware/validate');
 
-const WEBHOOK_URL    = process.env.WEBHOOK_URL;
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+const WEBHOOK_URL        = process.env.WEBHOOK_URL;
+const WEBHOOK_BASIC_AUTH = process.env.WEBHOOK_BASIC_AUTH;
 
 function shortId() {
   return crypto.randomBytes(4).toString('hex');
@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ success: false, error: fileCheck.error });
   }
 
-  if (!WEBHOOK_URL || !WEBHOOK_SECRET) {
+  if (!WEBHOOK_URL || !WEBHOOK_BASIC_AUTH) {
     console.error(`[submit:${reqId}] config faltante`);
     return res.status(500).json({ success: false, error: 'Servidor no configurado correctamente.' });
   }
@@ -70,10 +70,10 @@ router.post('/', async (req, res) => {
     const vfRes = await fetch(WEBHOOK_URL, {
       method:  'POST',
       headers: {
-        'Content-Type':   'application/json',
-        'x-secret-token': WEBHOOK_SECRET,
-        'x-source':       'incapacidades-node-app',
-        'x-request-id':   reqId
+        'Content-Type':  'application/json',
+        'Authorization': `Basic ${WEBHOOK_BASIC_AUTH}`,
+        'x-source':      'incapacidades-node-app',
+        'x-request-id':  reqId
       },
       body:   JSON.stringify(payload),
       signal: AbortSignal.timeout(15000)
