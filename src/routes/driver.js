@@ -4,8 +4,7 @@ const express = require('express');
 const crypto  = require('crypto');
 const router  = express.Router();
 
-const WEBHOOK_VALIDATE_URL = process.env.WEBHOOK_VALIDATE_URL;
-const WEBHOOK_SECRET       = process.env.WEBHOOK_SECRET;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
 function shortId() {
   return crypto.randomBytes(4).toString('hex');
@@ -20,13 +19,18 @@ router.post('/', async (req, res) => {
     return res.json({ valid: false, error: 'ID inválido. Debe ser numérico.' });
   }
 
-  if (!WEBHOOK_VALIDATE_URL || !WEBHOOK_SECRET) {
+  const isTest = process.env.TEST_MODE === 'true';
+  const webhookUrl = isTest
+    ? process.env.WEBHOOK_VALIDATE_URL_TEST
+    : process.env.WEBHOOK_VALIDATE_URL;
+
+  if (!webhookUrl || !WEBHOOK_SECRET) {
     console.error(`[driver:${reqId}] config faltante`);
     return res.json({ valid: false, error: 'Servicio de validación no configurado.' });
   }
 
   try {
-    const vfRes = await fetch(WEBHOOK_VALIDATE_URL, {
+    const vfRes = await fetch(webhookUrl, {
       method:  'POST',
       headers: {
         'Content-Type':   'application/json',
