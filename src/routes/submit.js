@@ -10,6 +10,7 @@ const {
   validateAttachment
 } = require('../middleware/validate');
 
+const WEBHOOK_URL    = process.env.WEBHOOK_URL;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
 function shortId() {
@@ -38,12 +39,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ success: false, error: fileCheck.error });
   }
 
-  const isTest = process.env.TEST_MODE === 'true';
-  const webhookUrl = isTest
-    ? process.env.WEBHOOK_URL_TEST
-    : process.env.WEBHOOK_URL;
-
-  if (!webhookUrl || !WEBHOOK_SECRET) {
+  if (!WEBHOOK_URL || !WEBHOOK_SECRET) {
     console.error(`[submit:${reqId}] config faltante`);
     return res.status(500).json({ success: false, error: 'Servidor no configurado correctamente.' });
   }
@@ -71,7 +67,7 @@ router.post('/', async (req, res) => {
   };
 
   try {
-    const vfRes = await fetch(webhookUrl, {
+    const vfRes = await fetch(WEBHOOK_URL, {
       method:  'POST',
       headers: {
         'Content-Type':   'application/json',
