@@ -19,17 +19,27 @@ function isValidDate(str) {
   return !isNaN(d.getTime());
 }
 
-const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB decodificados
+const MAX_FILE_BYTES  = 8  * 1024 * 1024; // 8MB por archivo decodificado
+const MAX_TOTAL_BYTES = 15 * 1024 * 1024; // 15MB total entre todos los archivos
+const MAX_FILES       = 3;
+
+const EXT_MIME = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  png: 'image/png',
+  pdf: 'application/pdf',
+  webp: 'image/webp',
+  heic: 'image/heic', heif: 'image/heif'
+};
 
 const MAGIC_BYTE_CHECKS = {
-  'image/jpeg':       (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF,
-  'image/png':        (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47 &&
-                             b[4] === 0x0D && b[5] === 0x0A && b[6] === 0x1A && b[7] === 0x0A,
-  'application/pdf':  (b) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46,
-  'image/webp':       (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
-                             b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
-  'image/heic':       isHeifFamily,
-  'image/heif':       isHeifFamily
+  'image/jpeg':      (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF,
+  'image/png':       (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47 &&
+                            b[4] === 0x0D && b[5] === 0x0A && b[6] === 0x1A && b[7] === 0x0A,
+  'application/pdf': (b) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46,
+  'image/webp':      (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+                            b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
+  'image/heic':      isHeifFamily,
+  'image/heif':      isHeifFamily
 };
 
 function isHeifFamily(b) {
@@ -38,30 +48,27 @@ function isHeifFamily(b) {
   return ['heic','heix','heim','heis','hevc','hevx','mif1','msf1'].includes(brand);
 }
 
-/**
- * Valida un dataURL/base64 de archivo adjunto.
- * Devuelve { ok: true, mime, sizeBytes } o { ok: false, error }.
- */
 function validateAttachment(base64String, fileName) {
-  if (!base64String) return { ok: true, mime: null, sizeBytes: 0 };
+  if (!base64String) return { ok: true, mime: null, sizeBytes: 0, pureBase64: '' };
 
   let declaredMime = null;
-  let pureBase64 = base64String;
+  let pureBase64   = base64String;
+
   const dataUriMatch = /^data:([\w/+.-]+);base64,(.+)$/i.exec(base64String);
   if (dataUriMatch) {
     declaredMime = dataUriMatch[1].toLowerCase();
-    pureBase64 = dataUriMatch[2];
+    pureBase64   = dataUriMatch[2];
+
+    // Algunos browsers envían application/octet-stream para PDFs — usar extensión como fallback
+    if ((declaredMime === 'application/octet-stream' || !MAGIC_BYTE_CHECKS[declaredMime]) && fileName) {
+      const ext = String(fileName).toLowerCase().split('.').pop();
+      declaredMime = EXT_MIME[ext] || declaredMime;
+    }
   }
 
   if (!declaredMime && fileName) {
     const ext = String(fileName).toLowerCase().split('.').pop();
-    declaredMime = {
-      jpg: 'image/jpeg', jpeg: 'image/jpeg',
-      png: 'image/png',
-      pdf: 'application/pdf',
-      webp: 'image/webp',
-      heic: 'image/heic', heif: 'image/heif'
-    }[ext] || null;
+    declaredMime = EXT_MIME[ext] || null;
   }
 
   if (!declaredMime || !MAGIC_BYTE_CHECKS[declaredMime]) {
@@ -77,7 +84,7 @@ function validateAttachment(base64String, fileName) {
 
   if (buf.length === 0) return { ok: false, error: 'Archivo vacío.' };
   if (buf.length > MAX_FILE_BYTES) {
-    return { ok: false, error: 'El archivo excede el tamaño máximo de 8MB.' };
+    return { ok: false, error: 'El archivo excede el tamaño máximo de 8 MB.' };
   }
   if (buf.length < 12) return { ok: false, error: 'Archivo demasiado pequeño o corrupto.' };
 
@@ -86,7 +93,44 @@ function validateAttachment(base64String, fileName) {
     return { ok: false, error: 'El contenido del archivo no coincide con su tipo declarado.' };
   }
 
-  return { ok: true, mime: declaredMime, sizeBytes: buf.length };
+  return { ok: true, mime: declaredMime, sizeBytes: buf.length, pureBase64 };
+}
+
+// Valida un array de constancias [{base64, fileName}]
+function validateAttachments(constancias) {
+  if (!Array.isArray(constancias) || constancias.length === 0) {
+    return { ok: true, files: [] };
+  }
+  if (constancias.length > MAX_FILES) {
+    return { ok: false, error: `Máximo ${MAX_FILES} archivos por solicitud.` };
+  }
+
+  let totalBytes = 0;
+  const files    = [];
+
+  for (let i = 0; i < constancias.length; i++) {
+    const { base64, fileName } = constancias[i] || {};
+    if (!base64 || !fileName) {
+      return { ok: false, error: `Archivo ${i + 1}: faltan datos requeridos.` };
+    }
+    const check = validateAttachment(base64, fileName);
+    if (!check.ok) {
+      return { ok: false, error: `Archivo ${i + 1}: ${check.error}` };
+    }
+    totalBytes += check.sizeBytes;
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      return { ok: false, error: 'El total de archivos excede 15 MB.' };
+    }
+    files.push({
+      base64:     base64,
+      fileName:   fileName,
+      mime:       check.mime,
+      sizeBytes:  check.sizeBytes,
+      pureBase64: check.pureBase64
+    });
+  }
+
+  return { ok: true, files };
 }
 
 module.exports = {
@@ -94,5 +138,8 @@ module.exports = {
   isValidEmail,
   isValidDate,
   validateAttachment,
-  MAX_FILE_BYTES
+  validateAttachments,
+  MAX_FILE_BYTES,
+  MAX_TOTAL_BYTES,
+  MAX_FILES
 };

@@ -191,6 +191,7 @@ body {
   transition: background 0.15s, color 0.15s; -webkit-tap-highlight-color: transparent;
 }
 .file-preview-remove:hover { background: rgba(229,57,53,0.1); color: var(--red); }
+.file-previews-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
 
 /* IMSS sub-form */
 .imss-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
@@ -441,21 +442,14 @@ body {
             <div id="upload-zone" class="upload-zone hidden">
               <label class="field-label" style="margin-bottom:10px;">Adjunta la constancia <span class="optional">(opcional)</span></label>
               <label for="constanciaFile" class="upload-area" id="upload-area">
-                <input type="file" id="constanciaFile" name="constanciaFile" accept="image/*,.pdf" class="upload-input" onchange="handleFileSelect(this)">
+                <input type="file" id="constanciaFile" name="constanciaFile" accept="image/*,.pdf" multiple class="upload-input" onchange="handleFileSelect(this)">
                 <div class="upload-prompt" id="upload-prompt">
                   <div class="upload-prompt-icon">📎</div>
-                  <div class="upload-prompt-text">Toca para adjuntar un archivo</div>
-                  <div class="upload-prompt-hint">Foto o escáner del formato · JPG, PNG o PDF · Máx 10 MB</div>
+                  <div class="upload-prompt-text">Toca para adjuntar archivos</div>
+                  <div class="upload-prompt-hint">JPG, PNG, WEBP, HEIC o PDF · Máx 3 archivos · 8 MB c/u</div>
                 </div>
               </label>
-              <div id="file-preview" class="file-preview hidden">
-                <span class="file-preview-icon" id="file-type-icon">📄</span>
-                <div class="file-preview-info">
-                  <div class="file-preview-name" id="file-preview-name"></div>
-                  <div class="file-preview-size" id="file-preview-size"></div>
-                </div>
-                <button type="button" class="file-preview-remove" onclick="removeFile()">✕</button>
-              </div>
+              <div id="file-preview-container" class="file-previews-list hidden"></div>
             </div>
 
             <div id="imss-form" class="imss-form hidden">
@@ -788,36 +782,81 @@ body {
     }
   };
 
-  // ── File upload ────────────────────────────────────────────
+  // ── File upload — múltiples archivos ──────────────────────
   window.handleFileSelect = function (input) {
-    if (!input.files || !input.files[0]) return;
-    var file = input.files[0];
+    if (!input.files || !input.files.length) return;
+    var files = Array.prototype.slice.call(input.files);
     var allowedExt = ['jpg','jpeg','png','webp','heic','heif','pdf'];
-    var ext  = file.name.split('.').pop().toLowerCase();
-    if (allowedExt.indexOf(ext) === -1) {
-      alert('Tipo de archivo no permitido. Sube foto (JPG/PNG/WEBP/HEIC) o PDF.');
-      input.value = '';
+    var totalSize = 0;
+
+    for (var i = 0; i < files.length; i++) {
+      var ext = files[i].name.split('.').pop().toLowerCase();
+      if (allowedExt.indexOf(ext) === -1) {
+        alert('Archivo ' + (i + 1) + ': tipo no permitido. Usa JPG, PNG, WEBP, HEIC o PDF.');
+        input.value = ''; return;
+      }
+      if (files[i].size > 8 * 1024 * 1024) {
+        alert('Archivo "' + files[i].name + '" excede el límite de 8 MB.');
+        input.value = ''; return;
+      }
+      totalSize += files[i].size;
+    }
+    if (files.length > 3) {
+      alert('Máximo 3 archivos por solicitud.');
+      input.value = ''; return;
+    }
+    if (totalSize > 15 * 1024 * 1024) {
+      alert('El total de archivos excede 15 MB. Reduce el tamaño o la cantidad.');
+      input.value = ''; return;
+    }
+    renderFilePreviews(files);
+  };
+
+  function renderFilePreviews(files) {
+    var container = document.getElementById('file-preview-container');
+    var prompt    = document.getElementById('upload-prompt');
+    container.innerHTML = '';
+
+    if (!files || files.length === 0) {
+      if (prompt) prompt.style.display = '';
+      container.classList.add('hidden');
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      alert('El archivo excede el límite de 8 MB.');
-      input.value = '';
-      return;
-    }
-    document.getElementById('file-type-icon').textContent    = (ext === 'pdf') ? '📄' : '🖼️';
-    document.getElementById('file-preview-name').textContent = file.name;
-    document.getElementById('file-preview-size').textContent = formatFileSize(file.size);
-    document.getElementById('upload-prompt').style.display   = 'none';
-    document.getElementById('file-preview').classList.remove('hidden');
+
+    if (prompt) prompt.style.display = 'none';
+    container.classList.remove('hidden');
+
+    files.forEach(function (file, idx) {
+      var ext  = file.name.split('.').pop().toLowerCase();
+      var icon = (ext === 'pdf') ? '📄' : '🖼️';
+      var div  = document.createElement('div');
+      div.className = 'file-preview';
+      div.innerHTML =
+        '<span class="file-preview-icon">' + icon + '</span>' +
+        '<div class="file-preview-info">' +
+          '<div class="file-preview-name">' + escapeHtml(file.name) + '</div>' +
+          '<div class="file-preview-size">' + formatFileSize(file.size) + '</div>' +
+        '</div>' +
+        '<button type="button" class="file-preview-remove" onclick="removeFileAt(' + idx + ')">✕</button>';
+      container.appendChild(div);
+    });
+  }
+
+  window.removeFileAt = function (idx) {
+    var input = document.getElementById('constanciaFile');
+    if (!input || !input.files) return;
+    var dt    = new DataTransfer();
+    Array.prototype.slice.call(input.files).forEach(function (f, i) {
+      if (i !== idx) dt.items.add(f);
+    });
+    input.files = dt.files;
+    renderFilePreviews(Array.prototype.slice.call(input.files));
   };
 
   window.removeFile = function () {
     var input = document.getElementById('constanciaFile');
     if (input) input.value = '';
-    var prompt  = document.getElementById('upload-prompt');
-    var preview = document.getElementById('file-preview');
-    if (prompt)  prompt.style.display = '';
-    if (preview) preview.classList.add('hidden');
+    renderFilePreviews([]);
   };
 
   function formatFileSize(bytes) {
@@ -849,38 +888,48 @@ body {
   function handleSubmit(e) {
     e.preventDefault();
     if (!validateStep(4)) return;
+
     var fileInput = document.getElementById('constanciaFile');
-    if (fileInput && fileInput.files && fileInput.files[0]) {
-      var file = fileInput.files[0];
-      var reader = new FileReader();
-      reader.onload  = function(ev) { submitWithData(ev.target.result, file.name); };
-      reader.onerror = function()   { submitWithData('', ''); };
-      reader.readAsDataURL(file);
-    } else {
-      submitWithData('', '');
+    var fileList  = (fileInput && fileInput.files) ? Array.prototype.slice.call(fileInput.files) : [];
+
+    if (fileList.length === 0) {
+      submitWithFiles([]);
+      return;
     }
+
+    var readers = fileList.map(function (file) {
+      return new Promise(function (resolve) {
+        var reader = new FileReader();
+        reader.onload  = function (ev) { resolve({ base64: ev.target.result, fileName: file.name }); };
+        reader.onerror = function ()   { resolve(null); };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readers).then(function (results) {
+      submitWithFiles(results.filter(function (r) { return r && r.base64; }));
+    });
   }
 
-  function submitWithData(fileBase64, fileName) {
+  function submitWithFiles(constancias) {
     var constanciaEl = document.querySelector('input[name="constanciaMedica"]:checked');
     var formData = {
-      nombre:               getVal('nombre'),
-      operadorId:           getVal('operadorId'),
-      nodo:                 getVal('nodo'),
-      tipoIncidencia:       getVal('tipoIncidencia'),
-      fechaIncidente:       getVal('fechaIncidente'),
-      descripcion:          getVal('descripcion'),
-      correo:               getVal('correo'),
-      telefono:             getVal('telefono'),
-      constanciaMedica:     constanciaEl ? constanciaEl.value : 'no_especificado',
-      constanciaFileBase64: fileBase64 || '',
-      constanciaFileName:   fileName   || '',
+      nombre:           getVal('nombre'),
+      operadorId:       getVal('operadorId'),
+      nodo:             getVal('nodo'),
+      tipoIncidencia:   getVal('tipoIncidencia'),
+      fechaIncidente:   getVal('fechaIncidente'),
+      descripcion:      getVal('descripcion'),
+      correo:           getVal('correo'),
+      telefono:         getVal('telefono'),
+      constanciaMedica: constanciaEl ? constanciaEl.value : 'no_especificado',
+      constancias:      constancias,
       imssData: {
-        folioImss:      getVal('imss-folio'),
-        nss:            getVal('imss-nss'),
-        fechaInicio:    getVal('imss-fechaInicio'),
-        diasIncapacidad:getVal('imss-dias'),
-        tipoConstancia: getVal('imss-tipo')
+        folioImss:       getVal('imss-folio'),
+        nss:             getVal('imss-nss'),
+        fechaInicio:     getVal('imss-fechaInicio'),
+        diasIncapacidad: getVal('imss-dias'),
+        tipoConstancia:  getVal('imss-tipo')
       }
     };
 

@@ -22,7 +22,7 @@ app.use(helmet({
 app.use('/api', rateLimit);
 
 // ── Rutas API con body limits por ruta ─────────────────────
-app.use('/api/submit',          express.json({ limit: '12mb' }), submitRoute);
+app.use('/api/submit',          express.json({ limit: '25mb' }), submitRoute);
 app.use('/api/validate-driver', express.json({ limit: '10kb' }), driverRoute);
 
 // ── Health check (Coolify/Render lo usa para saber si el app vive)
